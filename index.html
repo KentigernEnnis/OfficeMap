@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
   <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js" integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og==" crossorigin=""></script>
-  <script src= "fconfig.js"></script>
+  <script src= "config.js"></script>
   <style>
     html, body {
       height: 100%;
@@ -21,6 +21,7 @@
 <body>
 
 <div id='map'></div>
+<div id='filterHost'><input id="locationFilter" onkeyup="locationFilterChange();" /></div>
 <div id='listHost'></div>
 <div id='configHost'>[</div>
 <div id='configHostEnd'>]</div>
@@ -94,6 +95,9 @@
     div.appendChild(btn);
     document.getElementById("listHost").append(div);
   }
+  function clearLocationList(){
+    document.getElementById("listHost").innerHTML = "";
+  }  
 
   function populateList(locations){
     var loc = locations.sort(function(a, b){return a.label.localeCompare(b.label);})
@@ -115,6 +119,16 @@
     }
     map.tempFocus = L.marker([location.position.x, location.position.y]);
     map.tempFocus.addTo(map).bindPopup(location.label).openPopup();
+  }
+
+  function locationFilterChange() {
+    clearLocationList();
+    var search = document.getElementById("locationFilter").value;
+    locations = config.locations.filter(loc => loc.label.toLowerCase().includes(search.toLowerCase()));
+    if (locations.length == 1) {
+      flyTo(locations[0].name);
+    }
+    populateList(locations);
   }
 
   populateList(config.locations);
