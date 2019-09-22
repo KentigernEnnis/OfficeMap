@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <title>Simple Map</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js" integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og==" crossorigin=""></script>
+  <script src= "fconfig.js"></script>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    #map {
+      width: 600px;
+      height: 400px;
+    }
+  </style>  
+</head>
+<body>
+
+<div id='map'></div>
+<div id='listHost'></div>
+<div id='configHost'>[</div>
+<div id='configHostEnd'>]</div>
+<script>
+  if (typeof config === "undefined") {
+    config = {
+      imgUrl: 'floorplan.gif', //Attribution: https://www.flickr.com/photos/garbelini/300134781/in/photostream/
+      bounds: [1177, 3004], 
+      configMode: true, //This enables the functionality to click to create configuration values
+      locations: [
+      { name: "conferenceRoom", label: "Conference Room", position: { x: 1010, y: 1576 } },
+      { name: "michael", label: "Michael", position: { x: 1042, y: 1188 } },
+      { name: "jim", label: "Jim", position: { x: 650, y: 1310 } },
+      { name: "pam", label: "Pam", position: { x: 634, y: 990 } }
+      ]
+    };
+  }
+  function printConfig(location){
+    var div = document.createElement("div");
+    div.appendChild(document.createTextNode("{\
+      name: \""+location.name+"\",\
+      label: \""+location.label+"\",\
+      position: {\
+        x: "+location.x+",\
+        y: "+location.y+"\
+      }\
+    },"));
+    document.getElementById("configHost").append(div);
+  }
+
+  function printConfigFromMap(x, y){
+    printConfig({
+      name: document.getElementById("newLocName").value,
+      label: document.getElementById("newLocLabel").value,
+      x: x,
+      y: y
+    })
+    map.closePopup(tempPopup);
+  }
+
+  function clickFunction(click){
+    tempPopup = L.popup();
+    tempPopup.setLatLng(click.latlng)
+    .setContent('Label: <input id="newLocLabel"></input><br />Name: <input id="newLocName"></input><br /><button onclick="printConfigFromMap(\''+click.latlng.lat+'\',\''+click.latlng.lng+'\')">Save</button>')
+    .openOn(map);
+    document.getElementById("newLocLabel").focus();
+  }
+
+  var imgUrl = config.imgUrl;
+  var map = L.map('map', {
+    crs: L.CRS.Simple,
+    minZoom: -2
+  });
+  if (config.configMode == true) {
+    map.on("click", clickFunction);
+  } else {
+    document.getElementById("configHost").remove();
+    document.getElementById("configHostEnd").remove();
+  }
+
+  var bounds = [[0,0], config.bounds];
+  var image = L.imageOverlay(imgUrl, bounds).addTo(map);
+
+  map.fitBounds(bounds);
+
+  function makeLocation(location){
+    var div = document.createElement("div");
+    var btn = document.createElement("button");
+    btn.setAttribute("onclick", "flyTo('"+location.name+"')");
+    btn.appendChild(document.createTextNode(location.label));
+    div.appendChild(btn);
+    document.getElementById("listHost").append(div);
+  }
+
+  function populateList(locations){
+    var loc = locations.sort(function(a, b){return a.label.localeCompare(b.label);})
+    for(var i in locations){
+      var location = locations[i];
+      makeLocation(location);//decoupled?
+    }
+  }
+
+  function flyTo(name){
+    var locations = config.locations.filter(loc => loc.name == name);
+    if (locations.length != 1){
+      return;
+    }
+    var location = locations[0];
+    map.flyTo(L.latLng(location.position.x, location.position.y), 0.75)
+    if (map.tempFocus) {
+      map.tempFocus.remove();
+    }
+    map.tempFocus = L.marker([location.position.x, location.position.y]);
+    map.tempFocus.addTo(map).bindPopup(location.label).openPopup();
+  }
+
+  populateList(config.locations);
+
+</script>
+  </body>
+</html>
